@@ -27,8 +27,8 @@ sys.stdout = f
 bees = []
 for i in bee_images:
     bees.append(imread(home_dir + "/" + i, as_grey = False))
-    
-# divide bees by 255 to give it a 0 - 1 scale 
+
+# divide bees by 255 to give it a 0 - 1 scale
 # (255 is the current max val and zero is the min)
 bees = np.array(bees)/255.0
 
@@ -49,14 +49,14 @@ def weight_variable(shape):
 def bias_variable(shape):
     initial = tf.constant(0.1, shape=shape)
     return tf.Variable(initial)
-    
+
 def conv2d(x, W):
     return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
 
 def max_pool_2x2(x):
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],
                         strides=[1, 2, 2, 1], padding='SAME')
-                        
+
 W_conv1 = weight_variable([8, 8, 3, 32])
 b_conv1 = bias_variable([32])
 
@@ -103,7 +103,8 @@ train_step = tf.train.AdamOptimizer(1e-4).minimize(loss)
 # clipping_1 = tf.clip_by_norm(h_conv1, 1)
 # clipping_2 = tf.clip_by_norm(h_conv2, 1)
 # trying a different optimization algorithm
-# train_step = tf.train.GradientDescentOptimizer(learning_rate = 0.01).minimize(loss)
+# train_step = tf.train.GradientDescentOptimizer(
+#                         learning_rate = 0.01).minimize(loss)
 correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 sess.run(tf.initialize_all_variables())
@@ -117,7 +118,7 @@ for i in range(0,len(train_y),10):
             x: batch_xs, y_: batch_ys, keep_prob: 1.0})
         print "step %d, training accuracy %s"%(i, str(round(train_accuracy,3)))
     train_step.run(feed_dict={x: batch_xs, y_: batch_ys, keep_prob: 0.5})
-    
+
 feed_dict_3 = {x: test_x[:10], keep_prob: 1.0}
 classification = sess.run(y_conv, feed_dict_3)
 
