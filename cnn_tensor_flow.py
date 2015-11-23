@@ -13,6 +13,9 @@ from sklearn.preprocessing import OneHotEncoder
 out = "/home/ubuntu/CNN_tensor_flow_output.txt"
 home_dir = "/home/ubuntu/bee_images/train"
 labels = "/home/ubuntu/bee_images"
+# directory of current file
+fp = os.path.dirname(os.path.realpath(__file__))
+
 train_labels = pd.read_csv(labels + '/' + "train_labels.csv")
 train_labels.set_index('id', inplace = True)
 
@@ -107,6 +110,8 @@ train_step = tf.train.AdamOptimizer(1e-4).minimize(loss)
 #                         learning_rate = 0.01).minimize(loss)
 correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
+# object to save TF session
+saver = tf.train.Saver()
 sess.run(tf.initialize_all_variables())
 
 for i in range(0,len(train_y),10):
@@ -116,6 +121,7 @@ for i in range(0,len(train_y),10):
     if i%100 == 0:
         train_accuracy = accuracy.eval(feed_dict={
             x: batch_xs, y_: batch_ys, keep_prob: 1.0})
+        saver.save(sess, fp + '/model.ckpt', global_step = i)
         print "step %d, training accuracy %s"%(i, str(round(train_accuracy,3)))
     train_step.run(feed_dict={x: batch_xs, y_: batch_ys, keep_prob: 0.5})
 
@@ -123,6 +129,8 @@ feed_dict_3 = {x: test_x[:10], keep_prob: 1.0}
 classification = sess.run(y_conv, feed_dict_3)
 
 print classification
+
+
 
 sys.stdout = orig_stdout
 f.close()
