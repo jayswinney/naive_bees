@@ -123,6 +123,7 @@ for i in range(0,len(train_y),10):
             x: batch_xs, y_: batch_ys, keep_prob: 1.0})
         saver.save(sess, fp + '/model.ckpt', global_step = i)
         print "step %d, training accuracy %s"%(i, str(round(train_accuracy,3)))
+        print 'total loss %s' % str(loss)
     train_step.run(feed_dict={x: batch_xs, y_: batch_ys, keep_prob: 0.5})
 
 feed_dict_3 = {x: test_x[:10], keep_prob: 1.0}
