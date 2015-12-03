@@ -3,7 +3,8 @@
 import os
 import sys
 
-from skimage.io import imread, resize
+from skimage.io import imread
+from skimage.transform import resize
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder
