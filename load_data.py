@@ -38,7 +38,9 @@ def load_bees():
 
     Y = onehot.fit_transform(Y)
 
-    return gen_data(bees, Y)
+    bees, Y = gen_data(bees, Y)
+
+    return balance(bees, y)
 
 
 def gen_data(images, labels):
@@ -61,8 +63,22 @@ def gen_data(images, labels):
     return np.array(new_data), np.array(new_labels)
 
 
-# def balance(X, Y):
-#     '''
-#     takes an unbalanced dataset and undersamples the over represented class
-#     '''
-#
+def balance(x, y):
+    '''
+    takes an unbalanced dataset and undersamples the over represented class
+    '''
+
+    ones = np.array(range(x.shape[0]))[y[:,0] == 1]
+    zeros = np.array(range(x.shape[0]))[y[:,0] == 0]
+
+    ones_count = ones.shape[0]
+    zeros_count = zeros.shape[0]
+
+    if ones_count > zeros_count:
+        idx = np.append(ones, np.random.choice(zeros, ones_count))
+    else:
+        idx = np.append(zeros, np.random.choice(ones, zeros_count))
+
+    idx = np.random.shuffle(idx)
+
+    return x[idx], y[idx]
