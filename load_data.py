@@ -4,7 +4,7 @@ import os
 import sys
 
 from skimage.io import imread
-from skimage.transform import resize
+from skimage.transform import resize, rotate
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder
