@@ -40,7 +40,7 @@ def load_bees():
 
     bees, Y = gen_data(bees, Y)
 
-    return balance(bees, y)
+    return balance(bees, Y)
 
 
 def gen_data(images, labels):
