@@ -3,18 +3,15 @@
 import os
 import sys
 
-import tensorflow as tf
 from skimage.io import imread, imshow
 import pandas as pd
 import numpy as np
-from sklearn.cross_validation import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 
 def load_bees():
     '''
     helper function to load our data
     '''
-    out = "/home/ubuntu/CNN_tensor_flow_output.txt"
     home_dir = "/home/ubuntu/bee_images/train"
     labels = "/home/ubuntu/bee_images"
     train_labels = pd.read_csv(labels + '/' + "train_labels.csv")
@@ -26,7 +23,9 @@ def load_bees():
 
     bees = []
     for i in bee_images:
-        bees.append(imread(home_dir + "/" + i, as_grey = False))
+        im = imread(home_dir + "/" + i, as_grey = False)
+        im = resize(im, (48, 48))
+        bees.append(im)
 
     # divide bees by 255 to give it a 0 - 1 scale
     # (255 is the current max val and zero is the min)
@@ -38,4 +37,31 @@ def load_bees():
 
     Y = onehot.fit_transform(Y)
 
-    return bees, Y
+    return gen_data(bees, Y)
+
+
+def gen_data(images, labels):
+    '''
+    rotate image in all four directions and flip along vertical axis
+    to create additional training data
+    '''
+    new_data = []
+    for im in images:
+        for angle in range(0, 360, 90):
+            new_data.append(rotate(im, angle))
+            new_data.append(np.fliplr(rotate(im, angle)))
+
+    new_labels = []
+    for l in labels:
+        for i in xrange(8):
+            new_labels.append(l)
+
+
+    return np.array(new_data), np.array(new_labels)
+
+
+# def balance(X, Y):
+#     '''
+#     takes an unbalanced dataset and undersamples the over represented class
+#     '''
+#

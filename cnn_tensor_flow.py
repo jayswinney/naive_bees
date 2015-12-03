@@ -10,36 +10,17 @@ import numpy as np
 from sklearn.cross_validation import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 
+import load_data as ld
+
 out = "/home/ubuntu/CNN_tensor_flow_output.txt"
-home_dir = "/home/ubuntu/bee_images/train"
-labels = "/home/ubuntu/bee_images"
-# directory of current file
-fp = os.path.dirname(os.path.realpath(__file__))
 
-train_labels = pd.read_csv(labels + '/' + "train_labels.csv")
-train_labels.set_index('id', inplace = True)
 
-bee_images = os.listdir(home_dir)
-bee_images = filter(lambda f: f[-3:] == 'jpg', bee_images)
-bee_images = filter(lambda f: f != '1974.jpg', bee_images)
 
 orig_stdout = sys.stdout
 f = file(out, 'w')
 sys.stdout = f
 
-bees = []
-for i in bee_images:
-    bees.append(imread(home_dir + "/" + i, as_grey = False))
-
-# divide bees by 255 to give it a 0 - 1 scale
-# (255 is the current max val and zero is the min)
-bees = np.array(bees)/255.0
-
-Y = train_labels.ix[[int(x.split('.')[0]) for x in bee_images]].values
-
-onehot = OneHotEncoder(sparse = False, n_values = 2)
-
-Y = onehot.fit_transform(Y)
+bees, Y = ld.load_bees()
 
 train_x, test_x, train_y, test_y = train_test_split(bees, Y, test_size = 0.15)
 
@@ -63,10 +44,10 @@ def max_pool_2x2(x):
 W_conv1 = weight_variable([8, 8, 3, 32])
 b_conv1 = bias_variable([32])
 
-x = tf.placeholder("float", shape=[None,200,200,3])
+x = tf.placeholder("float", shape=[None, 48, 48, 3])
 y_ = tf.placeholder("float", shape=[None, 2])
 
-x_image = tf.reshape(x, [-1,200,200,3])
+x_image = tf.reshape(x, [-1, 48, 48, 3])
 
 h_conv1 = tf.clip_by_norm(tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1), 10)
 h_pool1 = max_pool_2x2(h_conv1)
