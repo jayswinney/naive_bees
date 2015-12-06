@@ -37,9 +37,7 @@ def load_bees():
     onehot = OneHotEncoder(sparse = False, n_values = 2)
 
     Y = onehot.fit_transform(Y)
-    print bees.shape, Y.shape
     bees, Y = gen_data(bees, Y)
-    print bees.shape, Y.shape
     return balance(bees, Y)
 
 
@@ -51,9 +49,12 @@ def gen_data(images, labels):
     new_data = []
     for im in images:
         for angle in range(0, 360, 90):
+            # rotate each image up, down, left and right
+            # and reflect each direction
             new_data.append(rotate(im, angle))
             new_data.append(np.fliplr(rotate(im, angle)))
 
+    # add the new labels to match up with the new images
     new_labels = []
     for l in labels:
         for i in xrange(8):
@@ -66,6 +67,7 @@ def gen_data(images, labels):
 def balance(x, y):
     '''
     takes an unbalanced dataset and undersamples the over represented class
+    by selecting the number of images from the smaller class from both classes
     '''
 
     ones = np.array(range(x.shape[0]))[y[:,0] == 1]
