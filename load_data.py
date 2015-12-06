@@ -13,18 +13,18 @@ def load_bees():
     '''
     helper function to load our data
     '''
-    home_dir = "/home/ubuntu/bee_images/train"
+    train_fp = "/home/ubuntu/bee_images/train"
     labels = "/home/ubuntu/bee_images"
     train_labels = pd.read_csv(labels + '/' + "train_labels.csv")
     train_labels.set_index('id', inplace = True)
 
-    bee_images = os.listdir(home_dir)
+    bee_images = os.listdir(train_fp)
     bee_images = filter(lambda f: f[-3:] == 'jpg', bee_images)
     bee_images = filter(lambda f: f != '1974.jpg', bee_images)
 
     bees = []
     for i in bee_images:
-        im = imread(home_dir + "/" + i, as_grey = False)
+        im = imread(train_fp + "/" + i, as_grey = False)
         im = resize(im, (48, 48))
         bees.append(im)
 
@@ -37,9 +37,9 @@ def load_bees():
     onehot = OneHotEncoder(sparse = False, n_values = 2)
 
     Y = onehot.fit_transform(Y)
-
+    print bees.shape, Y.shape
     bees, Y = gen_data(bees, Y)
-
+    print bees.shape, Y.shape
     return balance(bees, Y)
 
 
@@ -79,6 +79,6 @@ def balance(x, y):
     else:
         idx = np.append(zeros, np.random.choice(ones, zeros_count))
 
-    idx = np.random.shuffle(idx)
+    np.random.shuffle(idx)
 
     return x[idx], y[idx]

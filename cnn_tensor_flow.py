@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# !/usr/bin/env python
 
 import os
 import sys
@@ -12,13 +12,21 @@ from sklearn.preprocessing import OneHotEncoder
 
 import load_data as ld
 
-out = "/home/ubuntu/CNN_tensor_flow_output.txt"
-
-
+fp = '/home/ubuntu/naive_bees/'
+out = fp + 'CNN_tensor_flow_output.txt'
 
 orig_stdout = sys.stdout
-f = file(out, 'w')
-sys.stdout = f
+output = file(out, 'w')
+
+def print_fun(string, f = output):
+    '''
+    write to file and screen
+    '''
+    print string
+    f.write(string)
+    f.write('\n')
+
+
 
 bees, Y = ld.load_bees()
 
@@ -41,76 +49,100 @@ def max_pool_2x2(x):
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],
                         strides=[1, 2, 2, 1], padding='SAME')
 
-W_conv1 = weight_variable([8, 8, 3, 32])
+y_ = tf.placeholder("float", shape=[None, 2])
+x = tf.placeholder("float", shape=[None, 48, 48, 3])
+
+
+W_conv1 = weight_variable([3, 3, 3, 32])
 b_conv1 = bias_variable([32])
 
-x = tf.placeholder("float", shape=[None, 48, 48, 3])
-y_ = tf.placeholder("float", shape=[None, 2])
-
-x_image = tf.reshape(x, [-1, 48, 48, 3])
-
-h_conv1 = tf.clip_by_norm(tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1), 10)
+h_conv1 = tf.nn.relu(conv2d(x, W_conv1) + b_conv1)
 h_pool1 = max_pool_2x2(h_conv1)
 
-W_conv2 = weight_variable([8, 8, 32, 64])
+W_conv2 = weight_variable([3, 3, 32, 64])
 b_conv2 = bias_variable([64])
 
-h_conv2 = tf.clip_by_norm(tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2), 10)
+h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
 h_pool2 = max_pool_2x2(h_conv2)
 
-W_fc1 = weight_variable([50 * 50 * 64, 1024])
-b_fc1 = bias_variable([1024])
+W_fc1 = weight_variable([12 * 12 * 64, 128])
+b_fc1 = bias_variable([128])
 
-h_pool2_flat = tf.reshape(h_pool2, [-1, 50*50*64])
+h_pool2_flat = tf.reshape(h_pool2, [-1, 12 * 12 * 64])
 h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
 keep_prob = tf.placeholder("float")
 h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
-W_fc2 = weight_variable([1024, 2])
+W_fc2 = weight_variable([128, 2])
 b_fc2 = bias_variable([2])
 
 y_conv=tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
 
-# I'm adding all the loss functions to this collection
-# adding l2 regularization to try to keep the weights
-# in the relu layers < inf
-losses = tf.get_collection('losses')
-tf.add_to_collection('losses', tf.nn.l2_loss(h_conv1))
-tf.add_to_collection('losses', tf.nn.l2_loss(h_conv2))
-tf.add_to_collection('losses', -tf.reduce_sum(y_*tf.log(y_conv)))
-
-loss = tf.add_n(tf.get_collection('losses'), name = 'total_loss')
-
-# cross_entropy = -tf.reduce_sum(y_*tf.log(y_conv))
-train_step = tf.train.AdamOptimizer(1e-4).minimize(loss)
-# clipping_1 = tf.clip_by_norm(h_conv1, 1)
-# clipping_2 = tf.clip_by_norm(h_conv2, 1)
-# trying a different optimization algorithm
-# train_step = tf.train.GradientDescentOptimizer(
-#                         learning_rate = 0.01).minimize(loss)
+cross_entropy = -tf.reduce_sum(y_*tf.log(y_conv))
+train_step = tf.train.AdamOptimizer(1e-3).minimize(cross_entropy)
 correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
-# object to save TF session
 saver = tf.train.Saver()
 sess.run(tf.initialize_all_variables())
 
-for i in range(0,len(train_y),10):
-    end = i + 10
-    batch_xs = train_x[i:end]
-    batch_ys = train_y[i:end]
-    if i%100 == 0:
-        train_accuracy = accuracy.eval(feed_dict={
-            x: batch_xs, y_: batch_ys, keep_prob: 1.0})
-        saver.save(sess, fp + '/model.ckpt', global_step = i)
-        print "step %d, training accuracy %s"%(i, str(round(train_accuracy,3)))
-        print 'total loss %s' % str(loss)
-    train_step.run(feed_dict={x: batch_xs, y_: batch_ys, keep_prob: 0.5})
+
+##################
+
+batch_size = 200
+indicies = np.array(range(train_y.shape[0]))
+# this should be integer division
+batch_count = train_y.shape[0]/batch_size
+batches = np.array_split(indicies, batch_count)
+
+print_fun(
+    '%s batches with %s images/batch' % (str(batch_count), str(batch_size)))
+
+###########
+
+num_epochs = 200
+for j in xrange(num_epochs):
+    rand_ix = np.random.choice(np.array(range(test_y.shape[0])), 200)
+
+    for i,b in enumerate(batches):
+        batch_xs = train_x[b]
+        batch_ys = train_y[b]
+
+        sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys,
+                                        keep_prob: 0.8})
+
+        if i % 50 == 0:
+            test_accuracy, test_loss = sess.run([accuracy, cross_entropy],
+                feed_dict={x: test_x[rand_ix],
+                           y_: test_y[rand_ix], keep_prob: 1.0})
+    #         saver.save(sess, fp + 'model.ckpt', global_step = i)
+            print_fun(
+                "batch %d, training accuracy %s" % (i, str(
+                                                        round(test_accuracy,3))))
+            print_fun('total loss for batch set %s' % str(test_loss))
+
+            yhat = sess.run( y_conv, feed_dict={x: test_x[rand_ix],
+                                                y_: test_y[rand_ix],
+                                                keep_prob: 1.0})
+            print_fun(str(yhat.mean(0)[0]) + ', ' + str(yhat.mean(0)[1]))
+            print_fun('-' * 40)
+
+    print_fun('_' * 80)
+
+    test_accuracy, test_loss = sess.run([accuracy, cross_entropy], feed_dict={
+        x: test_x, y_: test_y, keep_prob: 1.0})
+    saver.save(sess, fp + 'model.ckpt', global_step = j)
+    print_fun("epoch %d, testing accuracy %s" % (j, str(round(test_accuracy,3))))
+    print_fun('total loss for epoch %s' % str(test_loss))
+    print_fun('_' * 80)
+    print_fun('\n')
+
+###################
 
 feed_dict_3 = {x: test_x[:10], keep_prob: 1.0}
 classification = sess.run(y_conv, feed_dict_3)
 
-print classification
+print_fun(classification)
 
 
 
